@@ -348,12 +348,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 백색소음 칩 선택 토글 이벤트
+    // 백색소음 칩 선택 토글 이벤트 (파도, 빗소리, 모닥불)
     soundChipBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const soundType = btn.getAttribute('data-sound');
             if (!window.soundEngine) return;
 
+            // 브라우저 오디오 보안 정책 통과를 위해 사용자 클릭 시 즉시 컨텍스트 활성화
+            window.soundEngine.initContext();
+
+            // 선택된 사운드 토글 재생/정지
             const isPlaying = window.soundEngine.toggleSound(soundType);
 
             // 모든 칩 활성화 상태 초기화 후 현재 선택된 칩에 active 클래스 토글

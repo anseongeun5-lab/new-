@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 검색 엔진 최적화(SEO)를 위한 메타 정보 -->
     <title>FocusPulse - 몰입을 위한 포모도로 타이머</title>
-    <meta name="description" content="25분 집중과 5분 휴식, 힐링 백색소음과 함께하는 고품격 미니멀 포모도로 타이머">
+    <meta name="description" content="25분 집중과 5분 휴식, 힐링 백색소음(파도, 비, 모닥불)과 함께하는 고품격 미니멀 포모도로 타이머">
     
-    <!-- 구글 폰트: 현대적이고 가독성 높은 Outfit & Inter 폰트 로드 -->
+    <!-- 구글 폰트: 현대적이고 가독성 높은 Outfit & Inter & JetBrains Mono 폰트 로드 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -28,7 +28,7 @@
                 <h1 class="brand-title">FocusPulse</h1>
             </div>
             
-            <!-- 백색소음 제어 패널 (파도, 비, 새소리 및 볼륨 제어) -->
+            <!-- 백색소음 제어 패널 (파도, 비, 모닥불 및 볼륨 제어) -->
             <section class="ambient-controller" aria-label="백색소음 설정">
                 <div class="sound-chips" role="group" aria-label="백색소음 음원 선택">
                     <!-- 파도 소리 토글 버튼 -->
@@ -41,10 +41,10 @@
                         <span class="chip-icon">🌧️</span>
                         <span class="chip-label">빗소리</span>
                     </button>
-                    <!-- 새소리 토글 버튼 -->
-                    <button id="sound-birds" class="sound-chip-btn" data-sound="birds" title="숲속 새소리 켜기/끄기">
-                        <span class="chip-icon">🐦</span>
-                        <span class="chip-label">새소리</span>
+                    <!-- 모닥불 소리 토글 버튼 (새소리 대체 추천 백색소음) -->
+                    <button id="sound-fire" class="sound-chip-btn" data-sound="fire" title="모닥불 장작 소리 켜기/끄기">
+                        <span class="chip-icon">🔥</span>
+                        <span class="chip-label">모닥불</span>
                     </button>
                 </div>
 
@@ -55,8 +55,8 @@
                         <span id="mute-icon" class="volume-icon">🔊</span>
                     </button>
                     <!-- 볼륨 조절 슬라이더 (0 ~ 100) -->
-                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="50" aria-label="백색소음 음량 조절">
-                    <span id="volume-percent" class="volume-text">50%</span>
+                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="60" aria-label="백색소음 음량 조절">
+                    <span id="volume-percent" class="volume-text">60%</span>
                 </div>
             </section>
         </header>
@@ -124,14 +124,16 @@
         <footer class="app-footer">
             <section class="session-tracker-card" aria-label="완료된 집중 세션 통계">
                 <div class="tracker-header">
+                    <!-- 제목 및 바로 옆에 배치된 초기화 버튼 -->
                     <div class="tracker-title-group">
                         <span class="tracker-trophy">🏆</span>
                         <h2 class="tracker-heading">완료한 집중 세션</h2>
+                        <!-- 완료한 세션 바로 옆에 위치한 둥근 초기화 버튼 -->
+                        <button id="reset-counter-btn" class="reset-chip-btn" title="완료한 세션 기록 초기화" aria-label="완료한 세션 기록 초기화">
+                            <span class="reset-icon">🔄</span>
+                            <span class="reset-text">초기화</span>
+                        </button>
                     </div>
-                    <!-- 카운터 리셋 버튼 -->
-                    <button id="reset-counter-btn" class="text-link-btn" title="세션 카운터 0으로 초기화">
-                        기록 초기화
-                    </button>
                 </div>
                 
                 <div class="tracker-content">

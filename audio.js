@@ -3,36 +3,36 @@
  * FocusPulse 오디오 엔진 모듈 (Web Audio API 기반)
  * ----------------------------------------------------------------------------
  * 1. 백색소음 실시간 오디오 신디사이징:
- *    - 파도(Ocean Waves): 핑크 노이즈 + LFO 필터/게인 변조로 밀물과 썰물 시뮬레이션
- *    - 빗소리(Rainfall): 필터링된 핑크 노이즈로 쏟아지는 차분한 빗소리 구현
- *    - 새소리(Birds Chirping): 주파수 변조(FM) 알고리즘 기반 청아한 숲속 새소리 생성
+ *    - 파도(Ocean Waves 🌊): 핑크/브라운 노이즈 + LFO 게인/필터 다이내믹 변조로 밀물과 썰물 구현
+ *    - 빗소리(Rainfall 🌧️): 밴드패스/로우패스 대역 필터링으로 쏟아지는 시원한 빗소리 구현
+ *    - 모닥불(Campfire 🔥): 따뜻한 저음 앰비언스 + 장작이 타닥타닥 튀는 리얼 크랙클(Crackling Pop) 합성
  * 2. 세션 종료 알림 차임벨(Alarm Chime):
- *    - 집중 완료(Focus Complete) & 휴식 완료(Break Complete) 축하 멜로디 생성
- * 3. 마스터 볼륨 및 음소거(Mute) 완벽 제어
+ *    - 25분 집중 완료 및 5분 휴식 완료 시 맑은 상승 멜로디 재생
+ * 3. 마스터 볼륨 및 음소거(Mute) 제어 및 AudioContext 즉시 언락 보장
  * ============================================================================
  */
 
 class SoundEngine {
     constructor() {
-        // 브라우저 AudioContext 초기화 (웹 표준 및 웹킷 지원)
+        // 브라우저 AudioContext 클래스 참조
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         this.ctx = null;
         this.AudioContextClass = AudioCtx;
 
-        // 마스터 게인 노드 (전체 백색소음 볼륨 제어)
+        // 마스터 게인 노드 (전체 백색소음 볼륨 조절)
         this.masterGain = null;
-        // 알림음 전용 게인 노드 (백색소음 볼륨과 독립적 재생 보장)
+        // 알림음 전용 게인 노드 (백색소음 볼륨과 독립)
         this.alarmGain = null;
 
-        // 현재 볼륨 상태 (0.0 ~ 1.0)
-        this.currentVolume = 0.5;
+        // 기본 볼륨 설정 (0.0 ~ 1.0)
+        this.currentVolume = 0.6;
         // 음소거 상태 플래그
         this.isMuted = false;
 
-        // 현재 활성화된 백색소음 종류 ('waves', 'rain', 'birds', null)
+        // 현재 활성화된 백색소음 종류 ('waves', 'rain', 'fire', null)
         this.activeSound = null;
 
-        // 실행 중인 오디오 노드 및 타이머 핸들 저장소
+        // 실행 중인 오디오 노드 및 인터벌 타이머 관리
         this.activeNodes = {
             sources: [],
             intervals: []
@@ -40,44 +40,44 @@ class SoundEngine {
     }
 
     /**
-     * 오디오 컨텍스트 초기화 및 사용자 상호작용 후 활성화
+     * 오디오 컨텍스트 초기화 및 브라우저 오디오 언락
      */
     initContext() {
-        // 이미 생성되어 실행 중이면 재사용
+        // 인스턴스가 없으면 새로 생성
         if (!this.ctx) {
             this.ctx = new this.AudioContextClass();
 
-            // 백색소음용 마스터 볼륨 게인 생성
+            // 백색소음 마스터 게인 노드 생성
             this.masterGain = this.ctx.createGain();
             this.masterGain.gain.setValueAtTime(this.currentVolume, this.ctx.currentTime);
 
-            // 알람음용 독립 게인 생성
+            // 알람 전용 게인 노드 생성 (알람은 명확하게 들리도록 설정)
             this.alarmGain = this.ctx.createGain();
-            this.alarmGain.gain.setValueAtTime(0.7, this.ctx.currentTime);
+            this.alarmGain.gain.setValueAtTime(0.75, this.ctx.currentTime);
 
-            // 최종 스피커 출력단으로 연결
+            // 스피커 최종 출력단 연결
             this.masterGain.connect(this.ctx.destination);
             this.alarmGain.connect(this.ctx.destination);
         }
 
-        // 브라우저 자동재생 정책에 의해 suspended 상태인 경우 깨움
+        // 브라우저 자동재생 제한 해제 (suspended 상태 즉시 resume)
         if (this.ctx.state === 'suspended') {
             this.ctx.resume();
         }
     }
 
     /**
-     * 백색/핑크 노이즈 오디오 버퍼 생성 헬퍼 함수
+     * 풍성하고 가청도가 뛰어난 핑크 노이즈 버퍼 생성기
      * @param {number} seconds 버퍼 길이(초)
      * @returns {AudioBuffer}
      */
-    createPinkNoiseBuffer(seconds = 5) {
+    createPinkNoiseBuffer(seconds = 6) {
         const sampleRate = this.ctx.sampleRate;
         const bufferSize = sampleRate * seconds;
         const buffer = this.ctx.createBuffer(1, bufferSize, sampleRate);
         const data = buffer.getChannelData(0);
 
-        // Paul Kellet의 필터링 알고리즘으로 자연스러운 핑크 노이즈 합성
+        // Paul Kellet 필터 알고리즘 (충분한 볼륨 진폭 확보)
         let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
         for (let i = 0; i < bufferSize; i++) {
             const white = Math.random() * 2 - 1;
@@ -87,94 +87,131 @@ class SoundEngine {
             b3 = 0.86650 * b3 + white * 0.3104856;
             b4 = 0.55000 * b4 + white * 0.5329522;
             b5 = -0.7616 * b5 - white * 0.0168980;
-            data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+            // 사람이 편안하면서도 또렷하게 들을 수 있도록 게인 스케일 0.32 적용
+            data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.32;
             b6 = white * 0.115926;
         }
         return buffer;
     }
 
     /**
-     * 파도 소리 (Ocean Waves) 생성 및 루프 재생
-     * - 핑크 노이즈에 LFO 저주파 발진기를 걸어 약 8초 주기로 밀려오고 빠져나가는 파도 표현
+     * 따뜻한 저음역 브라운(레드) 노이즈 버퍼 생성기 (바다 깊은 울림 및 모닥불 베이스)
+     * @param {number} seconds 버퍼 길이(초)
+     * @returns {AudioBuffer}
+     */
+    createBrownNoiseBuffer(seconds = 6) {
+        const sampleRate = this.ctx.sampleRate;
+        const bufferSize = sampleRate * seconds;
+        const buffer = this.ctx.createBuffer(1, bufferSize, sampleRate);
+        const data = buffer.getChannelData(0);
+
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            // 적분 필터로 브라운 노이즈 생성
+            data[i] = (lastOut + (0.02 * white)) / 1.02;
+            lastOut = data[i];
+            // 볼륨 부스팅 (저음 에너지 보강)
+            data[i] *= 3.5;
+        }
+        return buffer;
+    }
+
+    /**
+     * 1. 파도 소리 (Ocean Waves 🌊) 재생
+     * - 핑크 노이즈(파도 거품) + 브라운 노이즈(깊은 파도 웅장함)
+     * - 4.5초 주기의 LFO로 밀려오고 쓸려나가는 다이내믹 파도 사운드 실시간 합성
      */
     playWavesSound() {
         this.stopAmbientSound();
         this.initContext();
 
-        // 핑크 노이즈 소스 노드 생성
-        const noiseBuffer = this.createPinkNoiseBuffer(6);
-        const noiseSource = this.ctx.createBufferSource();
-        noiseSource.buffer = noiseBuffer;
-        noiseSource.loop = true;
+        // 핑크 노이즈 버퍼 소스 (부서지는 포말)
+        const pinkBuffer = this.createPinkNoiseBuffer(6);
+        const pinkSource = this.ctx.createBufferSource();
+        pinkSource.buffer = pinkBuffer;
+        pinkSource.loop = true;
 
-        // 파도의 깊은 소리를 위한 로우패스 필터
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(380, this.ctx.currentTime);
+        // 브라운 노이즈 버퍼 소스 (깊은 바다 파도 몸통)
+        const brownBuffer = this.createBrownNoiseBuffer(6);
+        const brownSource = this.ctx.createBufferSource();
+        brownSource.buffer = brownBuffer;
+        brownSource.loop = true;
 
-        // 파도 볼륨 오르내림을 제어할 다이내믹 게인
+        // 파도 필터: 로우패스 필터로 부드럽게 감싸줌
+        const waveFilter = this.ctx.createBiquadFilter();
+        waveFilter.type = 'lowpass';
+        waveFilter.frequency.setValueAtTime(450, this.ctx.currentTime);
+        waveFilter.Q.setValueAtTime(1.0, this.ctx.currentTime);
+
+        // 파도 다이내믹 게인: LFO를 통해 0.15 ~ 0.85 사이를 주기적으로 왕복
         const waveGain = this.ctx.createGain();
-        waveGain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        waveGain.gain.setValueAtTime(0.48, this.ctx.currentTime);
 
-        // 밀물-썰물 주기를 시뮬레이션할 LFO 발진기 (약 0.12Hz = 8.3초 주기)
+        // LFO 저주파 발진기 (주기 약 4.2초 = 0.24Hz로 시원시원하게 파도가 침)
         const lfo = this.ctx.createOscillator();
-        lfo.frequency.setValueAtTime(0.12, this.ctx.currentTime);
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(0.24, this.ctx.currentTime);
 
-        // LFO 진폭 제어 노드
+        // LFO 게인 변조 깊이 노드 (진폭 0.35)
         const lfoGain = this.ctx.createGain();
-        lfoGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        lfoGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
 
-        // 필터 주파수 변조를 위한 LFO 게인
-        const filterLfoGain = this.ctx.createGain();
-        filterLfoGain.gain.setValueAtTime(300, this.ctx.currentTime);
+        // LFO 필터 컷오프 변조 (파도가 밀려올 때 고음역 개방)
+        const lfoFilterMod = this.ctx.createGain();
+        lfoFilterMod.gain.setValueAtTime(320, this.ctx.currentTime);
 
-        // 노드 연결: 노이즈 ➔ 필터 ➔ 게인 ➔ 마스터 출력
-        noiseSource.connect(filter);
-        filter.connect(waveGain);
+        // 노드 체인 연결
+        pinkSource.connect(waveFilter);
+        brownSource.connect(waveFilter);
+        waveFilter.connect(waveGain);
         waveGain.connect(this.masterGain);
 
-        // LFO를 게인 및 필터 주파수에 변조 연결
+        // LFO를 게인과 필터 주파수에 변조 연결
         lfo.connect(lfoGain);
         lfoGain.connect(waveGain.gain);
 
-        lfo.connect(filterLfoGain);
-        filterLfoGain.connect(filter.frequency);
+        lfo.connect(lfoFilterMod);
+        lfoFilterMod.connect(waveFilter.frequency);
 
-        // 사운드 재생 시작
-        noiseSource.start();
+        // 재생 시작
+        pinkSource.start();
+        brownSource.start();
         lfo.start();
 
-        // 관리용 활성 노드 등록
-        this.activeNodes.sources.push(noiseSource, lfo);
+        this.activeNodes.sources.push(pinkSource, brownSource, lfo);
         this.activeSound = 'waves';
     }
 
     /**
-     * 빗소리 (Rainfall) 생성 및 재생
-     * - 중고역대가 부드럽게 깎인 핑크 노이즈로 촉촉한 빗줄기 소리 구현
+     * 2. 빗소리 (Rainfall 🌧️) 재생
+     * - 중역대와 고역대가 풍성한 핑크 노이즈로 촉촉하게 쏟아지는 빗소리 구현
      */
     playRainSound() {
         this.stopAmbientSound();
         this.initContext();
 
-        // 핑크 노이즈 소스 노드 생성
-        const noiseBuffer = this.createPinkNoiseBuffer(5);
+        const noiseBuffer = this.createPinkNoiseBuffer(6);
         const noiseSource = this.ctx.createBufferSource();
         noiseSource.buffer = noiseBuffer;
         noiseSource.loop = true;
 
-        // 빗소리 질감을 만드는 밴드패스/로우패스 필터
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(850, this.ctx.currentTime);
-        filter.Q.setValueAtTime(1.2, this.ctx.currentTime);
+        // 빗소리의 바스락거리는 촉촉함을 살리는 하이패스 & 로우패스 밴드 구성
+        const highpass = this.ctx.createBiquadFilter();
+        highpass.type = 'highpass';
+        highpass.frequency.setValueAtTime(250, this.ctx.currentTime);
+
+        const lowpass = this.ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.setValueAtTime(2800, this.ctx.currentTime);
 
         const rainGain = this.ctx.createGain();
-        rainGain.gain.setValueAtTime(0.65, this.ctx.currentTime);
+        rainGain.gain.setValueAtTime(0.75, this.ctx.currentTime);
 
-        // 노드 체인 연결
-        noiseSource.connect(filter);
-        filter.connect(rainGain);
+        // 노드 연결
+        noiseSource.connect(highpass);
+        highpass.connect(lowpass);
+        lowpass.connect(rainGain);
         rainGain.connect(this.masterGain);
 
         noiseSource.start();
@@ -184,91 +221,95 @@ class SoundEngine {
     }
 
     /**
-     * 숲속 새소리 (Birds Chirping) 알고리즘 재생
-     * - 불규칙한 주기(1.5 ~ 4초)마다 주파수가 빠르게 급변하는 사인파 짹짹거림 시뮬레이션
+     * 3. 모닥불 소리 (Campfire 🔥 - 새소리 대체 추천 백색소음) 재생
+     * - 따뜻한 저음의 불꽃 럼블(Low Rumble) + 장작이 '타닥! 틱! 톡!' 튀는 크랙클(Crackling Pop) 합성
      */
-    playBirdsSound() {
+    playFireSound() {
         this.stopAmbientSound();
         this.initContext();
 
-        // 개별 새 지저귐 사운드 1회 발생 함수
-        const triggerChirp = () => {
-            if (this.activeSound !== 'birds' || !this.ctx) return;
+        // 1) 모닥불의 은은한 기본 불길 소리 (브라운 노이즈)
+        const rumbleBuffer = this.createBrownNoiseBuffer(6);
+        const rumbleSource = this.ctx.createBufferSource();
+        rumbleSource.buffer = rumbleBuffer;
+        rumbleSource.loop = true;
+
+        const rumbleFilter = this.ctx.createBiquadFilter();
+        rumbleFilter.type = 'lowpass';
+        rumbleFilter.frequency.setValueAtTime(220, this.ctx.currentTime);
+
+        const rumbleGain = this.ctx.createGain();
+        rumbleGain.gain.setValueAtTime(0.55, this.ctx.currentTime);
+
+        rumbleSource.connect(rumbleFilter);
+        rumbleFilter.connect(rumbleGain);
+        rumbleGain.connect(this.masterGain);
+        rumbleSource.start();
+
+        this.activeNodes.sources.push(rumbleSource);
+
+        // 2) 장작이 타닥타닥 튀는 크랙클(Crackle) 생성기
+        const triggerCrackle = () => {
+            if (this.activeSound !== 'fire' || !this.ctx) return;
 
             const now = this.ctx.currentTime;
-            // 기본 주파수 랜덤 설정 (2000Hz ~ 3200Hz)
-            const baseFreq = 2200 + Math.random() * 800;
+            const popCount = 1 + Math.floor(Math.random() * 3); // 한 번에 1~3개 팝
 
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
+            for (let i = 0; i < popCount; i++) {
+                const popTime = now + (i * 0.03) + (Math.random() * 0.02);
+                
+                // 크랙클용 숏 노이즈 버퍼 생성 (0.01초 미세 펄스)
+                const crackleLength = Math.floor(this.ctx.sampleRate * 0.015);
+                const crackleBuf = this.ctx.createBuffer(1, crackleLength, this.ctx.sampleRate);
+                const cData = crackleBuf.getChannelData(0);
+                for (let j = 0; j < crackleLength; j++) {
+                    cData[j] = (Math.random() * 2 - 1) * Math.exp(-j / (crackleLength * 0.25));
+                }
 
-            osc.type = 'sine';
-            // 새의 짹짹거리는 주파수 슬라이드 모션 (급상승 후 하강)
-            osc.frequency.setValueAtTime(baseFreq, now);
-            osc.frequency.exponentialRampToValueAtTime(baseFreq + 1200, now + 0.05);
-            osc.frequency.exponentialRampToValueAtTime(baseFreq - 300, now + 0.12);
+                const popSource = this.ctx.createBufferSource();
+                popSource.buffer = crackleBuf;
 
-            // 볼륨 엔벨로프 (부드러운 시작과 페이드아웃)
-            gain.gain.setValueAtTime(0.001, now);
-            gain.gain.linearRampToValueAtTime(0.3, now + 0.03);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                // 톡 튀는 고역대 강조 밴드패스 필터
+                const bpf = this.ctx.createBiquadFilter();
+                bpf.type = 'bandpass';
+                bpf.frequency.setValueAtTime(1400 + Math.random() * 2600, popTime);
+                bpf.Q.setValueAtTime(3.0, popTime);
 
-            osc.connect(gain);
-            gain.connect(this.masterGain);
+                const popGain = this.ctx.createGain();
+                popGain.gain.setValueAtTime(0.4 + Math.random() * 0.5, popTime);
 
-            osc.start(now);
-            osc.stop(now + 0.16);
+                popSource.connect(bpf);
+                bpf.connect(popGain);
+                popGain.connect(this.masterGain);
 
-            // 30% 확률로 연달아 두 번째 짹(Double Chirp) 발생
-            if (Math.random() > 0.4) {
-                const secondChirpDelay = 0.12;
-                const osc2 = this.ctx.createOscillator();
-                const gain2 = this.ctx.createGain();
-                const now2 = now + secondChirpDelay;
-
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(baseFreq + 400, now2);
-                osc2.frequency.exponentialRampToValueAtTime(baseFreq + 1500, now2 + 0.04);
-                osc2.frequency.exponentialRampToValueAtTime(baseFreq, now2 + 0.13);
-
-                gain2.gain.setValueAtTime(0.001, now2);
-                gain2.gain.linearRampToValueAtTime(0.25, now2 + 0.02);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now2 + 0.14);
-
-                osc2.connect(gain2);
-                gain2.connect(this.masterGain);
-
-                osc2.start(now2);
-                osc2.stop(now2 + 0.15);
+                popSource.start(popTime);
             }
 
-            // 다음 지저귐을 1.5초 ~ 4초 사이 랜덤 간격으로 예약
-            const nextDelay = 1500 + Math.random() * 2500;
-            const timerId = setTimeout(triggerChirp, nextDelay);
+            // 다음 장작 튀는 간격을 60ms ~ 280ms 랜덤 간격으로 예약
+            const nextCrackleDelay = 60 + Math.random() * 220;
+            const timerId = setTimeout(triggerCrackle, nextCrackleDelay);
             this.activeNodes.intervals.push(timerId);
         };
 
-        // 즉시 첫 번째 지저귐 실행
-        triggerChirp();
-        this.activeSound = 'birds';
+        // 크랙클 루프 개시
+        triggerCrackle();
+        this.activeSound = 'fire';
     }
 
     /**
-     * 재생 중인 모든 백색소음 중지 및 리소스 정리
+     * 재생 중인 모든 백색소음 정지 및 노드 해제
      */
     stopAmbientSound() {
-        // 모든 오실레이터/버퍼 소스 중지 및 연결 해제
-        this.activeNodes.sources.forEach(source => {
+        this.activeNodes.sources.forEach(src => {
             try {
-                source.stop();
-                source.disconnect();
+                src.stop();
+                src.disconnect();
             } catch (e) {
-                // 이미 정지된 노드 예외 무시
+                // 이미 정지된 노드 무시
             }
         });
         this.activeNodes.sources = [];
 
-        // 새소리 스케줄링 타이머 정리
         this.activeNodes.intervals.forEach(timerId => clearTimeout(timerId));
         this.activeNodes.intervals = [];
 
@@ -276,8 +317,8 @@ class SoundEngine {
     }
 
     /**
-     * 백색소음 특정 사운드 토글 (선택 시 재생, 다시 누르면 정지)
-     * @param {string} soundType 'waves' | 'rain' | 'birds'
+     * 백색소음 토글 (선택 시 재생, 다시 누르면 정지)
+     * @param {'waves' | 'rain' | 'fire'} soundType
      * @returns {boolean} 재생 상태 여부
      */
     toggleSound(soundType) {
@@ -287,7 +328,7 @@ class SoundEngine {
         } else {
             if (soundType === 'waves') this.playWavesSound();
             else if (soundType === 'rain') this.playRainSound();
-            else if (soundType === 'birds') this.playBirdsSound();
+            else if (soundType === 'fire') this.playFireSound();
             return true;
         }
     }
@@ -302,63 +343,58 @@ class SoundEngine {
         this.currentVolume = normalized;
 
         if (!this.isMuted && this.masterGain) {
-            // 부드러운 볼륨 전환 (클릭 노이즈 방지)
             this.masterGain.gain.setTargetAtTime(normalized, this.ctx.currentTime, 0.05);
         }
     }
 
     /**
      * 음소거 토글
-     * @returns {boolean} 현재 음소거 여부
+     * @returns {boolean} 음소거 여부
      */
     toggleMute() {
         this.initContext();
         this.isMuted = !this.isMuted;
 
         if (this.masterGain) {
-            const targetGain = this.isMuted ? 0 : this.currentVolume;
-            this.masterGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.05);
+            const target = this.isMuted ? 0 : this.currentVolume;
+            this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.05);
         }
         return this.isMuted;
     }
 
     /**
-     * 세션 전환 알림 사운드 재생 (오픈소스 맑은 벨 차임 멜로디 합성)
-     * @param {'focus-done' | 'break-done'} type 세션 완료 종류
+     * 세션 전환 알림 사운드 재생 (차임벨)
+     * @param {'focus-done' | 'break-done'} type
      */
     playAlarm(type = 'focus-done') {
         this.initContext();
         const now = this.ctx.currentTime;
 
-        // 멜로디 음계 정의 (Hz): C5=523.25, E5=659.25, G5=783.99, C6=1046.50
-        const notes = type === 'focus-done' 
-            ? [523.25, 659.25, 783.99, 1046.50] // 집중 완료 시 밝게 상승하는 4음 차임
-            : [783.99, 659.25, 523.25];         // 휴식 완료 시 부드럽게 복귀를 알리는 3음 차임
-
-        const noteDuration = 0.22;
+        // C5-E5-G5-C6 화음 멜로디
+        const notes = type === 'focus-done'
+            ? [523.25, 659.25, 783.99, 1046.50]
+            : [783.99, 659.25, 523.25];
 
         notes.forEach((freq, index) => {
-            const startTime = now + (index * 0.16);
+            const startTime = now + (index * 0.15);
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
 
-            // 부드러운 사인파와 벨 배음을 위한 트라이앵글 혼합
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, startTime);
 
-            // 차임벨 특유의 빠른 어택과 긴 감쇄(Decay) 엔벨로프
             gain.gain.setValueAtTime(0.001, startTime);
-            gain.gain.linearRampToValueAtTime(0.45, startTime + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, startTime + noteDuration + 0.4);
+            gain.gain.linearRampToValueAtTime(0.5, startTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
 
             osc.connect(gain);
             gain.connect(this.alarmGain);
 
             osc.start(startTime);
-            osc.stop(startTime + noteDuration + 0.45);
+            osc.stop(startTime + 0.55);
         });
     }
 }
 
-// 전역 싱글톤 인스턴스 노출
+// 전역 싱글톤 인스턴스
 window.soundEngine = new SoundEngine();

@@ -515,20 +515,48 @@ body {
     color: var(--text-primary);
 }
 
-/* 텍스트 링크 스타일 리셋 버튼 */
-.text-link-btn {
-    background: none;
-    border: none;
-    font-size: 0.78rem;
-    color: var(--text-muted);
+/* 완료한 세션 옆 둥근 알약형 초기화 버튼 */
+.reset-chip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    font-weight: 500;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px; /* 알약형 둥근 모서리 */
     cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    transition: color 0.2s ease;
+    margin-left: 0.4rem;
+    transition: var(--transition-smooth);
+    user-select: none;
 }
 
-.text-link-btn:hover {
-    color: var(--accent-primary);
+.reset-chip-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.4);
+    color: #FF8787;
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2);
+}
+
+.reset-chip-btn:active {
+    transform: translateY(1px) scale(0.96);
+}
+
+.reset-chip-btn:hover .reset-icon {
+    transform: rotate(180deg);
+}
+
+.reset-icon {
+    font-size: 0.72rem;
+    line-height: 1;
+    transition: transform 0.4s ease;
+}
+
+.reset-text {
+    font-family: var(--font-body);
 }
 
 .tracker-content {
