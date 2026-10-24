@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <!-- 모바일 및 다양한 해상도 지원을 위한 뷰포트 설정 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 검색 엔진 최적화(SEO)를 위한 메타 정보 -->
+    <title>FocusPulse - 몰입을 위한 포모도로 타이머</title>
+    <meta name="description" content="25분 집중과 5분 휴식, 힐링 백색소음과 함께하는 고품격 미니멀 포모도로 타이머">
+    
+    <!-- 구글 폰트: 현대적이고 가독성 높은 Outfit & Inter 폰트 로드 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- 메인 스타일시트 링크 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-focus">
+    <!-- 전체 배경 블러 및 조명 효과를 위한 배경 레이어 -->
+    <div class="background-ambient-glow" aria-hidden="true"></div>
+
+    <div class="app-container">
+        <!-- 상단 헤더: 앱 브랜드 및 백색소음 컨트롤 바 -->
+        <header class="app-header">
+            <div class="brand">
+                <span class="brand-icon">🍅</span>
+                <h1 class="brand-title">FocusPulse</h1>
+            </div>
+            
+            <!-- 백색소음 제어 패널 (파도, 비, 새소리 및 볼륨 제어) -->
+            <section class="ambient-controller" aria-label="백색소음 설정">
+                <div class="sound-chips" role="group" aria-label="백색소음 음원 선택">
+                    <!-- 파도 소리 토글 버튼 -->
+                    <button id="sound-waves" class="sound-chip-btn" data-sound="waves" title="파도 소리 켜기/끄기">
+                        <span class="chip-icon">🌊</span>
+                        <span class="chip-label">파도</span>
+                    </button>
+                    <!-- 빗소리 토글 버튼 -->
+                    <button id="sound-rain" class="sound-chip-btn" data-sound="rain" title="빗소리 켜기/끄기">
+                        <span class="chip-icon">🌧️</span>
+                        <span class="chip-label">빗소리</span>
+                    </button>
+                    <!-- 새소리 토글 버튼 -->
+                    <button id="sound-birds" class="sound-chip-btn" data-sound="birds" title="숲속 새소리 켜기/끄기">
+                        <span class="chip-icon">🐦</span>
+                        <span class="chip-label">새소리</span>
+                    </button>
+                </div>
+
+                <!-- 볼륨 및 음소거 컨트롤 영역 -->
+                <div class="volume-container">
+                    <!-- 음소거 토글 버튼 -->
+                    <button id="mute-toggle-btn" class="icon-btn" title="음소거 토글" aria-label="음소거 토글">
+                        <span id="mute-icon" class="volume-icon">🔊</span>
+                    </button>
+                    <!-- 볼륨 조절 슬라이더 (0 ~ 100) -->
+                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="50" aria-label="백색소음 음량 조절">
+                    <span id="volume-percent" class="volume-text">50%</span>
+                </div>
+            </section>
+        </header>
+
+        <!-- 메인 콘텐츠 영역: 원형 프로그레스 타이머 & 제어 버튼 -->
+        <main class="timer-main-section">
+            <!-- 현재 모드 표시 배지 (집중 / 휴식) -->
+            <div class="mode-badge-wrapper">
+                <div id="mode-badge" class="mode-badge mode-focus">
+                    <span class="mode-dot"></span>
+                    <span id="mode-title-text" class="mode-title-text">집중 세션 (25분)</span>
+                </div>
+            </div>
+
+            <!-- 중앙 원형 프로그레스 링 컨테이너 -->
+            <div class="circular-timer-wrapper">
+                <!-- 정밀 SVG 프로그레스 링 -->
+                <svg class="progress-ring-svg" viewBox="0 0 340 340" aria-hidden="true">
+                    <defs>
+                        <!-- 링 테두리에 적용될 부드러운 그라디언트 정의 -->
+                        <linearGradient id="ringGradientFocus" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FF6B6B" />
+                            <stop offset="100%" stop-color="#FFA07A" />
+                        </linearGradient>
+                        <linearGradient id="ringGradientBreak" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#2EC4B6" />
+                            <stop offset="100%" stop-color="#48CAE4" />
+                        </linearGradient>
+                    </defs>
+                    <!-- 배경 링 (회색빛 가이드라인) -->
+                    <circle class="ring-track" cx="170" cy="170" r="145"></circle>
+                    <!-- 실제 진행률을 나타내는 전면 동적 링 -->
+                    <circle id="progress-indicator" class="ring-progress" cx="170" cy="170" r="145"></circle>
+                </svg>
+
+                <!-- 중앙 텍스트 정보 (남은 시간 & 상태 안내) -->
+                <div class="timer-center-display">
+                    <!-- 대형 디지털 타이머 표시 (MM:SS) -->
+                    <time id="timer-display" class="digital-time" datetime="PT25M">25:00</time>
+                    <span id="timer-sub-status" class="timer-status-hint">시작 버튼을 눌러 집중을 시작하세요</span>
+                </div>
+            </div>
+
+            <!-- 타이머 제어 버튼 그룹 (시작/일시정지/초기화) -->
+            <section class="controls-section" aria-label="타이머 제어">
+                <!-- 시작 / 재개 버튼 -->
+                <button id="start-btn" class="control-btn primary-btn" title="타이머 시작 (스페이스바)">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-label">시작</span>
+                </button>
+                <!-- 일시정지 버튼 -->
+                <button id="pause-btn" class="control-btn secondary-btn" title="타이머 일시정지" disabled>
+                    <span class="btn-icon">⏸</span>
+                    <span class="btn-label">일시정지</span>
+                </button>
+                <!-- 초기화 버튼 -->
+                <button id="reset-btn" class="control-btn neutral-btn" title="타이머 초기화 (R 키)">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-label">초기화</span>
+                </button>
+            </section>
+        </main>
+
+        <!-- 하단 섹션: 완료된 집중 세션 카운터 및 생산성 위젯 -->
+        <footer class="app-footer">
+            <section class="session-tracker-card" aria-label="완료된 집중 세션 통계">
+                <div class="tracker-header">
+                    <div class="tracker-title-group">
+                        <span class="tracker-trophy">🏆</span>
+                        <h2 class="tracker-heading">완료한 집중 세션</h2>
+                    </div>
+                    <!-- 카운터 리셋 버튼 -->
+                    <button id="reset-counter-btn" class="text-link-btn" title="세션 카운터 0으로 초기화">
+                        기록 초기화
+                    </button>
+                </div>
+                
+                <div class="tracker-content">
+                    <!-- 총 완료 세션 숫자 -->
+                    <div class="counter-badge">
+                        <span id="session-count-number" class="count-value">0</span>
+                        <span class="count-unit">회 완료</span>
+                    </div>
+                    <!-- 시각적 토마토 아이콘 리스트 (예: 🍅 🍅 🍅) -->
+                    <div id="session-icons-container" class="session-icons-container" aria-label="세션 시각화">
+                        <span class="empty-hint">첫 번째 25분 집중을 달성해보세요!</span>
+                    </div>
+                </div>
+            </section>
+        </footer>
+    </div>
+
+    <!-- 오디오 합성 및 음향 재생 모듈 로드 -->
+    <script src="audio.js"></script>
+    <!-- 타이머 핵심 로직 및 UI 이벤트 제어 스크립트 로드 -->
+    <script src="script.js"></script>
+</body>
+</html>

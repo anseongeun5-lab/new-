@@ -1,0 +1,665 @@
+/* ==========================================================================
+   FocusPulse 모던 포모도로 타이머 스타일시트 (CSS3)
+   - 모던 다크 테마 & 부드러운 글래스모피즘(Glassmorphism)
+   - 집중 모드(Warm Coral)와 휴식 모드(Cool Teal) 다이내믹 테마 전환
+   - SVG 원형 프로그레스 링 및 둥근 알약형 버튼 인터랙션 애니메이션
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 글로벌 디자인 토큰 및 CSS 커스텀 프로퍼티 정의
+   -------------------------------------------------------------------------- */
+:root {
+    /* 폰트 패밀리 정의 */
+    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* 공통 기본 흑백 및 뉴트럴 색상 */
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    
+    /* 카드 및 글래스모피즘 배경 */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+
+    /* 트랜지션 타이밍 정의 */
+    --transition-theme: background 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
+    --transition-smooth: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 집중 모드 (Focus Mode) - 웜 앰버 / 딥 코랄 다크 테마 */
+body.theme-focus {
+    --bg-base: #140E10;
+    --bg-gradient: radial-gradient(circle at 50% 20%, #2D1418 0%, #140E10 70%);
+    --glow-color: rgba(255, 107, 107, 0.22);
+    --accent-primary: #FF6B6B;
+    --accent-gradient: linear-gradient(135deg, #FF6B6B 0%, #FFA07A 100%);
+    --ring-gradient: url(#ringGradientFocus);
+    --mode-badge-bg: rgba(255, 107, 107, 0.15);
+    --mode-badge-border: rgba(255, 107, 107, 0.35);
+    --mode-dot-color: #FF6B6B;
+}
+
+/* 휴식 모드 (Break Mode) - 쿨 민트 / 에메랄드 딥 틸 다크 테마 */
+body.theme-break {
+    --bg-base: #0B1614;
+    --bg-gradient: radial-gradient(circle at 50% 20%, #112C26 0%, #0B1614 70%);
+    --glow-color: rgba(46, 196, 182, 0.22);
+    --accent-primary: #2EC4B6;
+    --accent-gradient: linear-gradient(135deg, #2EC4B6 0%, #48CAE4 100%);
+    --ring-gradient: url(#ringGradientBreak);
+    --mode-badge-bg: rgba(46, 196, 182, 0.15);
+    --mode-badge-border: rgba(46, 196, 182, 0.35);
+    --mode-dot-color: #2EC4B6;
+}
+
+/* --------------------------------------------------------------------------
+   2. 기본 리셋 및 전역 레이아웃
+   -------------------------------------------------------------------------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: var(--font-body);
+    background-color: var(--bg-base);
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+    transition: var(--transition-theme);
+    position: relative;
+    padding: 1.5rem 1rem;
+}
+
+/* 몽환적인 주변 배경 빛 효과 */
+.background-ambient-glow {
+    position: fixed;
+    top: -10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    transition: background 0.8s ease;
+}
+
+/* 전체 앱 레이아웃 래퍼 */
+.app-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin: auto;
+}
+
+/* --------------------------------------------------------------------------
+   3. 상단 헤더 및 백색소음 제어 패널
+   -------------------------------------------------------------------------- */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    padding: 1rem 1.5rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 24px;
+    box-shadow: var(--glass-shadow);
+}
+
+/* 브랜드 타이틀 */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.brand-icon {
+    font-size: 1.6rem;
+    animation: gentle-bob 3s ease-in-out infinite;
+}
+
+.brand-title {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 백색소음 패널 */
+.ambient-controller {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.sound-chips {
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* 백색소음 선택 칩 버튼 */
+.sound-chip-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary);
+    padding: 0.45rem 0.85rem;
+    border-radius: 9999px; /* 알약형 둥근 모서리 */
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    user-select: none;
+}
+
+.sound-chip-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+/* 활성화된 백색소음 칩 */
+.sound-chip-btn.active {
+    background: var(--accent-primary);
+    color: #FFFFFF;
+    border-color: var(--accent-primary);
+    box-shadow: 0 4px 15px var(--glow-color);
+}
+
+.chip-icon {
+    font-size: 1rem;
+}
+
+/* 볼륨 및 음소거 컨트롤 컨테이너 */
+.volume-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 50%;
+    transition: var(--transition-smooth);
+}
+
+.icon-btn:hover {
+    color: var(--text-primary);
+    transform: scale(1.15);
+}
+
+/* 커스텀 볼륨 슬라이더 */
+.volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 65px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    outline: none;
+    cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+}
+
+.volume-text {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    min-width: 32px;
+    text-align: right;
+}
+
+/* --------------------------------------------------------------------------
+   4. 메인 타이머 섹션 & 원형 프로그레스 링
+   -------------------------------------------------------------------------- */
+.timer-main-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.5rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 36px;
+    box-shadow: var(--glass-shadow);
+}
+
+/* 상단 상태 모드 배지 */
+.mode-badge-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+.mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1.1rem;
+    border-radius: 9999px;
+    background: var(--mode-badge-bg);
+    border: 1px solid var(--mode-badge-border);
+    transition: var(--transition-theme);
+}
+
+.mode-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--mode-dot-color);
+    box-shadow: 0 0 10px var(--mode-dot-color);
+    animation: pulse-dot 2s infinite ease-in-out;
+}
+
+.mode-title-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+    text-transform: uppercase;
+}
+
+/* 원형 프로그레스 링 래퍼 */
+.circular-timer-wrapper {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0 2rem;
+}
+
+/* SVG 스타일 */
+.progress-ring-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg); /* 12시 방향부터 채워지도록 회전 */
+}
+
+/* 배경 회색 링 */
+.ring-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 14;
+}
+
+/* 전면 동적 진행률 링 */
+.ring-progress {
+    fill: none;
+    stroke: var(--ring-gradient);
+    stroke-width: 14;
+    stroke-linecap: round; /* 끝부분 둥글게 */
+    /* 원주 길이 = 2 * PI * 145 ≈ 911.06 */
+    stroke-dasharray: 911.06;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.8s linear, stroke 0.5s ease;
+    filter: drop-shadow(0 0 12px var(--glow-color));
+}
+
+/* 중앙 텍스트 정보 */
+.timer-center-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 2;
+}
+
+/* 대형 디지털 시계 텍스트 */
+.digital-time {
+    font-family: var(--font-mono);
+    font-size: clamp(3.8rem, 9vw, 5.2rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: #FFFFFF;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    font-variant-numeric: tabular-nums; /* 숫자 폭 균일하게 고정 */
+}
+
+/* 타이머 보조 상태 문구 */
+.timer-status-hint {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    max-width: 200px;
+    line-height: 1.4;
+    transition: opacity 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   5. 타이머 제어 버튼 그룹 (둥근 모서리 & Hover 마이크로 애니메이션)
+   -------------------------------------------------------------------------- */
+.controls-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+/* 공통 버튼 베이스: 둥근 알약형 및 부드러운 애니메이션 */
+.control-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.8rem;
+    border-radius: 9999px; /* 부드러운 둥근 알약형 모서리 */
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    user-select: none;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 마우스 호버(Hover) 시 부드러운 스케일 업 및 이동 */
+.control-btn:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.04);
+}
+
+/* 클릭(Active) 시 누르는 햅틱 피드백 */
+.control-btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.97);
+}
+
+/* 비활성화 버튼 스타일 */
+.control-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* 메인 시작 버튼 (Primary) */
+.primary-btn {
+    background: var(--accent-gradient);
+    color: #FFFFFF;
+    box-shadow: 0 8px 24px -4px var(--glow-color);
+}
+
+.primary-btn:hover:not(:disabled) {
+    box-shadow: 0 14px 30px -4px var(--glow-color);
+}
+
+/* 일시정지 버튼 (Secondary) */
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.secondary-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 초기화 버튼 (Neutral) */
+.neutral-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.neutral-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+}
+
+.btn-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   6. 하단 세션 카운터 카드
+   -------------------------------------------------------------------------- */
+.app-footer {
+    width: 100%;
+}
+
+.session-tracker-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 24px;
+    padding: 1.25rem 1.75rem;
+    box-shadow: var(--glass-shadow);
+}
+
+.tracker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.9rem;
+}
+
+.tracker-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tracker-trophy {
+    font-size: 1.2rem;
+}
+
+.tracker-heading {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* 텍스트 링크 스타일 리셋 버튼 */
+.text-link-btn {
+    background: none;
+    border: none;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+}
+
+.text-link-btn:hover {
+    color: var(--accent-primary);
+}
+
+.tracker-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.counter-badge {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.count-value {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    transition: color 0.4s ease;
+}
+
+.count-unit {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.session-icons-container {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.session-tomato-icon {
+    font-size: 1.25rem;
+    animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.empty-hint {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   7. 애니메이션 키프레임 (Keyframes)
+   -------------------------------------------------------------------------- */
+@keyframes pulse-dot {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+    }
+}
+
+@keyframes gentle-bob {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes pop-in {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    80% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   8. 반응형 미디어 쿼리 (모바일 화면 최적화)
+   -------------------------------------------------------------------------- */
+@media (max-width: 520px) {
+    .app-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+        gap: 0.9rem;
+    }
+
+    .brand {
+        justify-content: center;
+    }
+
+    .ambient-controller {
+        justify-content: center;
+    }
+
+    .circular-timer-wrapper {
+        width: 270px;
+        height: 270px;
+    }
+
+    .ring-track,
+    .ring-progress {
+        stroke-width: 12;
+    }
+
+    .digital-time {
+        font-size: 3.5rem;
+    }
+
+    .controls-section {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .control-btn {
+        width: 100%;
+        padding: 0.85rem 1.2rem;
+    }
+
+    .tracker-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
